@@ -148,3 +148,31 @@ export async function generateFinancialReport(fileContent: string): Promise<{ re
     return { reportText: "An unknown error occurred while communicating with the AI service." };
   }
 }
+
+const chatSystemInstruction = `You are a helpful, professional, and friendly financial consultant assistant for Numbers Consulting. 
+Your goal is to answer visitor questions about finance, business, and the services provided by Numbers Consulting.
+Be concise and engaging. 
+If asked about specific report generation, guide them to use the main 'Report Generator' tool on the website.`;
+
+export async function sendChatMessage(history: { role: 'user' | 'model', parts: { text: string }[] }[], newMessage: string): Promise<string> {
+    try {
+         const contents = [
+             ...history,
+             { role: 'user', parts: [{ text: newMessage }] }
+        ];
+
+        const response = await ai.models.generateContent({
+            model: "gemini-2.5-flash",
+            config: {
+                systemInstruction: chatSystemInstruction,
+                maxOutputTokens: 500,
+            },
+            contents: contents as any // Casting to avoid strict type mismatch if any, though structure matches
+        });
+
+        return response.text || "";
+    } catch (error) {
+        console.error("Error sending chat message:", error);
+        return "I apologize, but I'm having trouble connecting right now. Please try again later.";
+    }
+}

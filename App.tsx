@@ -3,6 +3,8 @@ import { ChatMessage } from './types';
 import { generateFinancialReport } from './services/geminiService';
 import ChatBox from './components/ChatBox';
 import UploadBox from './components/UploadBox';
+import Simulator from './components/Simulator';
+import ChatWidget from './components/ChatWidget';
 import { LogoIcon } from './components/icons/LogoIcon';
 import { TrashIcon } from './components/icons/TrashIcon';
 
@@ -23,6 +25,7 @@ const App: React.FC = () => {
   const [messages, setMessages] = useState<ChatMessage[]>([initialMessage]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<'chat' | 'simulator'>('chat');
 
   const handleFileUpload = useCallback(async (file: File) => {
     setIsLoading(true);
@@ -105,17 +108,56 @@ const App: React.FC = () => {
 
       <main className="flex-1 overflow-hidden p-4 md:p-6 lg:p-8">
         <div className="h-full max-w-4xl mx-auto flex flex-col">
-          <ChatBox messages={messages} isLoading={isLoading} />
-          <div className="mt-4">
-             {error && <div className="text-red-500 text-center mb-2 p-2 bg-red-100 dark:bg-red-900/50 rounded-md">{error}</div>}
-             <UploadBox onFileUpload={handleFileUpload} isLoading={isLoading} />
-          </div>
+            <div className="flex gap-4 mb-6 border-b border-slate-200 dark:border-slate-700">
+                <button
+                    onClick={() => setActiveTab('chat')}
+                    className={`pb-2 px-1 text-sm font-medium transition-colors relative ${
+                        activeTab === 'chat' 
+                        ? 'text-sky-600 dark:text-sky-400' 
+                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                    }`}
+                >
+                    Report Generator
+                    {activeTab === 'chat' && (
+                        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-sky-600 dark:bg-sky-400 rounded-t-full" />
+                    )}
+                </button>
+                <button
+                    onClick={() => setActiveTab('simulator')}
+                    className={`pb-2 px-1 text-sm font-medium transition-colors relative ${
+                        activeTab === 'simulator' 
+                        ? 'text-sky-600 dark:text-sky-400' 
+                        : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+                    }`}
+                >
+                    Scenario Simulator
+                    {activeTab === 'simulator' && (
+                        <div className="absolute bottom-0 left-0 w-full h-0.5 bg-sky-600 dark:bg-sky-400 rounded-t-full" />
+                    )}
+                </button>
+            </div>
+
+          {activeTab === 'chat' ? (
+              <>
+                <ChatBox messages={messages} isLoading={isLoading} />
+                <div className="mt-4">
+                    {error && <div className="text-red-500 text-center mb-2 p-2 bg-red-100 dark:bg-red-900/50 rounded-md">{error}</div>}
+                    <UploadBox onFileUpload={handleFileUpload} isLoading={isLoading} />
+                </div>
+              </>
+          ) : (
+              <div className="h-full overflow-y-auto">
+                 <Simulator />
+              </div>
+          )}
         </div>
       </main>
 
       <footer className="text-center p-4 text-xs text-slate-500 dark:text-slate-400 border-t border-slate-200 dark:border-slate-700">
         &copy; {new Date().getFullYear()} Numbers Consulting. Simplifying Financial Intelligence.
       </footer>
+
+      <ChatWidget />
     </div>
   );
 };
