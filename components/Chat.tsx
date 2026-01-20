@@ -16,7 +16,10 @@ interface ChatMessageItem {
     chartData?: ChartData;
     isFile?: boolean;
     fileName?: string;
+    isReport?: boolean;
 }
+
+const PDF_SERVER_URL = 'http://localhost:3001';
 
 const Chat: React.FC = () => {
     const [messages, setMessages] = useState<ChatMessageItem[]>([
@@ -27,8 +30,40 @@ const Chat: React.FC = () => {
     ]);
     const [inputValue, setInputValue] = useState('');
     const [isLoading, setIsLoading] = useState(false);
+    const [downloadingPdf, setDownloadingPdf] = useState<number | null>(null);
     const messagesEndRef = useRef<HTMLDivElement>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
+
+    const downloadPdf = async (content: string, index: number) => {
+        setDownloadingPdf(index);
+        try {
+            const response = await fetch(`${PDF_SERVER_URL}/api/generate-pdf`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    html: content,
+                    title: 'Financial Analysis Report'
+                })
+            });
+            
+            if (!response.ok) throw new Error('PDF generation failed');
+            
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `Numbers_Consulting_Report_${Date.now()}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        } catch (error) {
+            console.error('PDF download error:', error);
+            alert('Failed to generate PDF. Make sure the PDF server is running (npm run server).');
+        } finally {
+            setDownloadingPdf(null);
+        }
+    };
 
     const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -109,7 +144,8 @@ const Chat: React.FC = () => {
             setMessages(prev => [...prev, { 
                 role: 'model', 
                 content: result.reportText,
-                chartData: result.chartData
+                chartData: result.chartData,
+                isReport: true
             }]);
         } catch (err: any) {
             const errorMessage = err.message || 'An unexpected error occurred while processing the file.';
@@ -221,6 +257,34 @@ const Chat: React.FC = () => {
                                         )}
                                     </div>
                                 )}
+                                
+                                {/* Download PDF Button */}
+                                {msg.isReport && (
+                                    <div className="mt-4">
+                                        <button
+                                            onClick={() => downloadPdf(msg.content, idx)}
+                                            disabled={downloadingPdf === idx}
+                                            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-emerald-500 to-teal-600 text-white rounded-lg hover:from-emerald-400 hover:to-teal-500 disabled:opacity-50 transition-all shadow-md shadow-emerald-500/20"
+                                        >
+                                            {downloadingPdf === idx ? (
+                                                <>
+                                                    <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    </svg>
+                                                    <span>Generating PDF...</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                                    </svg>
+                                                    <span>Download PDF Report</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    </div>
+                                )}
                             </div>
                         </div>
                     ))}
@@ -263,6 +327,7 @@ const Chat: React.FC = () => {
                             onChange={onFileChange}
                             accept=".xlsx,.xls,.csv,.pdf,.txt"
                             className="hidden"
+                            title="Upload financial document"
                         />
                         <textarea
                             value={inputValue}
