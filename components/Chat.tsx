@@ -184,38 +184,7 @@ const Chat: React.FC = () => {
     };
 
     return (
-        <div className="flex flex-col h-screen bg-gradient-to-br from-slate-50 via-white to-sky-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
-            {/* Header */}
-            <header className="flex items-center justify-between px-6 py-4 border-b border-slate-200/50 dark:border-slate-700/50 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
-                <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gradient-to-br from-sky-500 to-indigo-600 rounded-xl shadow-lg shadow-sky-500/20">
-                        <LogoIcon className="h-6 w-6 text-white" />
-                    </div>
-                    <div>
-                        <h1 className="text-xl font-bold text-slate-900 dark:text-white">Numbers Consulting</h1>
-                        <p className="text-xs text-slate-500 dark:text-slate-400">AI Financial Analyst</p>
-                    </div>
-                </div>
-                <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => setShowDocs(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-700 dark:hover:bg-slate-600 rounded-xl text-sm font-medium text-slate-700 dark:text-slate-200 transition-colors"
-                    >
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                        </svg>
-                        API Docs
-                    </button>
-                    <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                        <span className="text-sm text-slate-600 dark:text-slate-400">Online</span>
-                    </div>
-                </div>
-            </header>
-
-            {/* API Documentation Modal */}
-            {showDocs && <ApiDocs onClose={() => setShowDocs(false)} />}
-
+        <div className="flex flex-col h-full bg-gradient-to-br from-slate-50 via-white to-sky-50 dark:from-slate-900 dark:via-slate-900 dark:to-slate-800">
             {/* Messages */}
             <div className="flex-1 overflow-y-auto px-4 md:px-6 lg:px-8 py-6">
                 <div className="max-w-4xl mx-auto space-y-6">
