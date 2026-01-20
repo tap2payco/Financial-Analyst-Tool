@@ -66,6 +66,17 @@ const ApiDocsPage: React.FC = () => {
                                     Integrate Finance Guru's powerful AI-driven financial analysis into your own applications. 
                                     Our API enables you to create chat interfaces, perform deep financial document analysis, and generate branded PDF reports programmatically.
                                 </p>
+                                <div className="flex flex-col sm:flex-row gap-4 mb-8">
+                                    <a href="/register" className="inline-flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-xl text-white bg-indigo-600 hover:bg-indigo-700 md:py-4 md:text-lg md:px-10 transition-colors shadow-lg shadow-indigo-600/30">
+                                        Get Started
+                                        <svg className="ml-2 w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                                        </svg>
+                                    </a>
+                                    <a href="/login" className="inline-flex items-center justify-center px-6 py-3 border border-slate-200 dark:border-slate-700 text-base font-medium rounded-xl text-slate-700 dark:text-slate-200 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/50 md:py-4 md:text-lg md:px-10 transition-colors">
+                                        Developer Login
+                                    </a>
+                                </div>
                             </section>
 
                             <section>
