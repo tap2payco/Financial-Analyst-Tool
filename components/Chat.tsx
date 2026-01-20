@@ -26,7 +26,7 @@ const Chat: React.FC = () => {
     const [messages, setMessages] = useState<ChatMessageItem[]>([
         {
             role: 'model',
-            content: "Welcome to Numbers Consulting. I'm your professional financial analyst. How can I assist you with your financial analysis needs today?"
+            content: "Welcome to Finance Guru. I'm your professional financial analyst. How can I assist you with your financial analysis needs today?"
         }
     ]);
     const [inputValue, setInputValue] = useState('');
