@@ -8,29 +8,56 @@ if (!API_KEY) {
 
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
-const systemInstruction = `You are a professional financial analysis assistant for Numbers Consulting. Your role is to analyze uploaded financial data and generate a detailed, insightful, and strategic report. This includes not just financial summaries but also a SWOT analysis and risk assessment. You must return a valid JSON object that strictly adheres to the provided schema. The 'reportText' field must be a markdown-formatted string. Use markdown tables to present tabular data for clarity. The 'chartData' field should contain data for visualizations if applicable.`;
+const systemInstruction = `You are a SENIOR FINANCIAL ANALYST at Finance Guru, a premier AI-powered financial advisory firm. 
 
-const userInstructionTemplate = `Analyze the provided financial data. Generate a comprehensive report and extract data for charts.
+Your role is to analyze uploaded financial data and generate comprehensive, professional reports. You MUST:
+1. Return a valid JSON object strictly adhering to the provided schema
+2. Format 'reportText' in clear, well-structured markdown with proper headings
+3. ALWAYS use markdown tables for presenting numerical data
+4. ALWAYS provide chart data in the 'chartData' field - this is CRITICAL for visualization
+5. Be precise with all numbers - calculate percentages, ratios, and totals accurately
+6. Provide actionable, data-driven insights`;
 
-The report should include:
-- A summary with total income, expenses, net profit, and profit margin.
-- A breakdown of the top 5-7 expense categories with amounts and percentages, presented in a markdown table.
-- A comparative analysis in a markdown table if data from multiple periods is available.
-- Key trends and observations.
-- A SWOT analysis (Strengths, Weaknesses, Opportunities, Threats) based on the financial data.
-- A section on potential risks and mitigation strategies.
-- 2-3 actionable recommendations.
+const userInstructionTemplate = `Analyze the provided financial data and generate a comprehensive professional report.
 
-Format the report text in clear markdown.
+## REQUIRED REPORT STRUCTURE:
 
-For chart data:
-- **expenseBreakdown**: Provide labels (category names) and data (amounts) for a BAR chart of the top expenses.
-- **expensePieChart**: Provide the same data for a PIE/DOUGHNUT chart. This is great for showing proportions.
-- **trendAnalysis**: If data spans multiple periods, provide labels (e.g., months) and datasets (e.g., 'Income', 'Expenses') for a LINE chart.
+### 1. Executive Summary
+- Total Income, Total Expenses, Net Profit/Loss
+- Profit Margin percentage
+- Key financial health indicators
 
-If chart data is not applicable, you may omit the 'chartData' field or leave its properties empty.
+### 2. Expense Breakdown (MUST include markdown table)
+| Category | Amount | % of Total |
+|----------|--------|------------|
+(Include top 5-7 expense categories)
+
+### 3. Trend Analysis
+- If multi-period data: compare periods with growth/decline percentages
+- Highlight significant changes (>10% variance)
+
+### 4. SWOT Analysis
+| Strengths | Weaknesses |
+|-----------|------------|
+| Opportunities | Threats |
+
+### 5. Risk Assessment
+- Identify 2-3 key financial risks
+- Provide mitigation strategies
+
+### 6. Recommendations
+- 2-3 specific, actionable recommendations based on the data
+
+## CRITICAL - CHART DATA REQUIREMENTS:
+You MUST provide chartData with:
+- **expenseBreakdown**: labels (category names) + data (amounts) for BAR chart
+- **expensePieChart**: same data formatted for PIE chart
+- **trendAnalysis**: If multiple periods exist, provide labels (periods) and datasets array with {label, data} objects for LINE chart
+
+NEVER omit chartData. If data seems limited, still provide at minimum expenseBreakdown and expensePieChart.
+
 ---
-Here is the data from the uploaded file:
+FINANCIAL DATA TO ANALYZE:
 `;
 
 const responseSchema = {

@@ -39,29 +39,75 @@ const Chat: React.FC = () => {
     const downloadPdf = async (content: string, index: number) => {
         setDownloadingPdf(index);
         try {
-            const response = await fetch(`${PDF_SERVER_URL}/api/generate-pdf`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    html: content,
-                    title: 'Financial Analysis Report'
-                })
+            // Create a styled container for the PDF
+            const container = document.createElement('div');
+            container.style.cssText = `
+                padding: 40px;
+                font-family: 'Segoe UI', system-ui, sans-serif;
+                font-size: 11pt;
+                line-height: 1.6;
+                max-width: 800px;
+                background: white;
+                color: #1e293b;
+            `;
+            
+            // Add header with branding
+            const header = document.createElement('div');
+            header.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 2px solid #6366f1;">
+                    <div style="width: 40px; height: 40px; background: linear-gradient(135deg, #6366f1, #a855f7); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px;">FG</div>
+                    <div>
+                        <div style="font-size: 18px; font-weight: bold; color: #1e293b;">Finance Guru</div>
+                        <div style="font-size: 11px; color: #64748b;">AI Financial Analysis Report</div>
+                    </div>
+                    <div style="margin-left: auto; font-size: 10px; color: #94a3b8;">Generated: ${new Date().toLocaleDateString()}</div>
+                </div>
+            `;
+            container.appendChild(header);
+            
+            // Parse and add content
+            const contentDiv = document.createElement('div');
+            contentDiv.innerHTML = marked.parse(content);
+            contentDiv.querySelectorAll('h1, h2, h3').forEach((el: any) => {
+                el.style.color = '#1e293b';
+                el.style.marginTop = '24px';
             });
+            contentDiv.querySelectorAll('table').forEach((el: any) => {
+                el.style.width = '100%';
+                el.style.borderCollapse = 'collapse';
+                el.style.marginTop = '16px';
+            });
+            contentDiv.querySelectorAll('th, td').forEach((el: any) => {
+                el.style.border = '1px solid #e2e8f0';
+                el.style.padding = '8px 12px';
+                el.style.textAlign = 'left';
+            });
+            contentDiv.querySelectorAll('th').forEach((el: any) => {
+                el.style.backgroundColor = '#f1f5f9';
+                el.style.fontWeight = '600';
+            });
+            container.appendChild(contentDiv);
             
-            if (!response.ok) throw new Error('PDF generation failed');
+            // Temporarily add to DOM for rendering
+            document.body.appendChild(container);
             
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `Numbers_Consulting_Report_${Date.now()}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
+            // Generate PDF using html2pdf.js
+            const opt = {
+                margin: [10, 10, 10, 10],
+                filename: `Finance_Guru_Report_${Date.now()}.pdf`,
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' },
+                pagebreak: { mode: ['avoid-all', 'css', 'legacy'] }
+            };
+            
+            await (window as any).html2pdf().set(opt).from(container).save();
+            
+            // Cleanup
+            document.body.removeChild(container);
         } catch (error) {
             console.error('PDF download error:', error);
-            alert('Failed to generate PDF. Make sure the PDF server is running (npm run server).');
+            alert('Failed to generate PDF. Please try again.');
         } finally {
             setDownloadingPdf(null);
         }
