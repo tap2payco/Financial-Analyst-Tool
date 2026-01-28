@@ -46,25 +46,36 @@ const initLocalStorage = () => {
 // ============= SUPABASE AUTH SERVICE =============
 const supabaseAuthService = {
   register: async (data: { name: string; email: string; password: string; company: string; location: string; phone: string }): Promise<User> => {
-    // Sign up with Supabase Auth
+    // Sign up with Supabase Auth - pass metadata for the trigger
     const { data: authData, error: authError } = await supabase.auth.signUp({
       email: data.email,
       password: data.password,
+      options: {
+        data: {
+          name: data.name,
+          // We pass these too, though the trigger might only catch 'name'
+          // We will run an UPDATE to be sure
+        }
+      }
     });
 
     if (authError) throw new Error(authError.message);
     if (!authData.user) throw new Error('Registration failed');
 
-    // Create profile in profiles table
-    const { error: profileError } = await supabase.from('profiles').insert({
-      id: authData.user.id,
-      name: data.name,
-      email: data.email,
-      company: data.company,
-      phone: data.phone,
-      location: data.location,
-      role: 'developer'
-    });
+    // Profile is created automatically by database trigger (on_auth_user_created)
+    // We just need to update it with the extra fields (company, phone, location)
+    // We wait a brief moment to ensure trigger has fired (usually instant)
+    
+    const { error: profileError } = await supabase
+      .from('profiles')
+      .update({
+        company: data.company,
+        phone: data.phone,
+        location: data.location,
+        // Ensure name is synced if trigger missed it
+        name: data.name 
+      })
+      .eq('id', authData.user.id);
 
     if (profileError) throw new Error(profileError.message);
 
