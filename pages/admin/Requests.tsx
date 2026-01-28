@@ -1,17 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import AdminLayout from './AdminLayout';
 import { authService, User } from '../../services/authService';
+import { emailService } from '../../services/emailService';
 
 const AdminRequests: React.FC = () => {
     const [users, setUsers] = useState<User[]>([]);
 
     useEffect(() => {
-        setUsers(authService.getAllUsers());
+        authService.getAllUsers().then(setUsers);
     }, []);
 
-    const handleUpdateStatus = (userId: string, key: string, status: 'active' | 'revoked') => {
-        authService.updateApiKeyStatus(userId, key, status);
-        setUsers(authService.getAllUsers()); // Refresh list
+    const handleUpdateStatus = async (userId: string, key: string, status: 'active' | 'revoked', userEmail: string, userName: string) => {
+        await authService.updateApiKeyStatus(userId, key, status);
+        
+        // Send email notification
+        if (status === 'active') {
+            await emailService.sendKeyApprovedEmail(userEmail, userName, key);
+        } else {
+            await emailService.sendKeyRevokedEmail(userEmail, userName, key);
+        }
+
+        const freshUsers = await authService.getAllUsers();
+        setUsers(freshUsers); // Refresh list
     };
 
     // Flatten logic to get list of all keys
@@ -51,18 +61,17 @@ const AdminRequests: React.FC = () => {
                                     </div>
                                 </div>
                             </div>
-                            
-                            <div className="flex items-center gap-3">
+                                                        <div className="flex items-center gap-3">
                                 {key.status === 'pending' && (
                                     <>
                                         <button 
-                                            onClick={() => handleUpdateStatus(key.userId, key.key, 'active')}
+                                            onClick={() => handleUpdateStatus(key.userId, key.key, 'active', key.userEmail, key.userName)}
                                             className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-lg transition-colors"
                                         >
                                             Approve
                                         </button>
                                         <button 
-                                            onClick={() => handleUpdateStatus(key.userId, key.key, 'revoked')}
+                                            onClick={() => handleUpdateStatus(key.userId, key.key, 'revoked', key.userEmail, key.userName)}
                                             className="px-4 py-2 bg-slate-100 dark:bg-slate-700 hover:bg-red-100 hover:text-red-600 text-slate-600 dark:text-slate-300 text-sm font-bold rounded-lg transition-colors"
                                         >
                                             Reject
@@ -71,7 +80,7 @@ const AdminRequests: React.FC = () => {
                                 )}
                                 {key.status === 'active' && (
                                     <button 
-                                        onClick={() => handleUpdateStatus(key.userId, key.key, 'revoked')}
+                                        onClick={() => handleUpdateStatus(key.userId, key.key, 'revoked', key.userEmail, key.userName)}
                                         className="px-4 py-2 border border-red-200 text-red-600 hover:bg-red-50 text-sm font-bold rounded-lg transition-colors"
                                     >
                                         Revoke Access
