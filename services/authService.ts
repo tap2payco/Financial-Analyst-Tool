@@ -1,3 +1,6 @@
+import { supabase, isSupabaseConfigured, Profile, ApiKey as DbApiKey } from '../lib/supabase';
+
+// User interface matching local structure
 export interface User {
   id: string;
   name: string;
@@ -16,11 +19,12 @@ export interface ApiKey {
   requestedAt: string;
 }
 
+// Local storage keys (fallback when Supabase not configured)
 const STORAGE_KEY_USERS = 'finance_guru_users';
 const STORAGE_KEY_SESSION = 'finance_guru_session';
 
-// Initialize with a default admin if none exists
-const initStorage = () => {
+// Initialize with a default admin if none exists (localStorage fallback)
+const initLocalStorage = () => {
   const users = JSON.parse(localStorage.getItem(STORAGE_KEY_USERS) || '[]');
   if (!users.find((u: User) => u.email === 'admin@financeguru.com')) {
     const admin: User = {
@@ -39,10 +43,182 @@ const initStorage = () => {
   }
 };
 
-export const authService = {
-  // Register
-  register: (data: Omit<User, 'id' | 'role' | 'apiKeys' | 'createdAt'>) => {
-    initStorage();
+// ============= SUPABASE AUTH SERVICE =============
+const supabaseAuthService = {
+  register: async (data: { name: string; email: string; password: string; company: string; location: string; phone: string }): Promise<User> => {
+    // Sign up with Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signUp({
+      email: data.email,
+      password: data.password,
+    });
+
+    if (authError) throw new Error(authError.message);
+    if (!authData.user) throw new Error('Registration failed');
+
+    // Create profile in profiles table
+    const { error: profileError } = await supabase.from('profiles').insert({
+      id: authData.user.id,
+      name: data.name,
+      email: data.email,
+      company: data.company,
+      phone: data.phone,
+      location: data.location,
+      role: 'developer'
+    });
+
+    if (profileError) throw new Error(profileError.message);
+
+    return {
+      id: authData.user.id,
+      name: data.name,
+      email: data.email,
+      company: data.company,
+      location: data.location,
+      phone: data.phone,
+      role: 'developer',
+      apiKeys: [],
+      createdAt: new Date().toISOString()
+    };
+  },
+
+  login: async (email: string, password: string): Promise<User> => {
+    const { data, error } = await supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+
+    if (error) throw new Error(error.message);
+    if (!data.user) throw new Error('Login failed');
+
+    // Fetch profile
+    const { data: profile, error: profileError } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', data.user.id)
+      .single();
+
+    if (profileError) throw new Error('Profile not found');
+
+    // Fetch API keys
+    const { data: keys } = await supabase
+      .from('api_keys')
+      .select('*')
+      .eq('user_id', data.user.id);
+
+    return {
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
+      company: profile.company,
+      location: profile.location,
+      phone: profile.phone,
+      role: profile.role,
+      apiKeys: (keys || []).map((k: DbApiKey) => ({
+        key: k.key,
+        status: k.status,
+        requestedAt: k.created_at
+      })),
+      createdAt: profile.created_at
+    };
+  },
+
+  logout: async () => {
+    await supabase.auth.signOut();
+  },
+
+  getCurrentUser: async (): Promise<User | null> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return null;
+
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', user.id)
+      .single();
+
+    if (!profile) return null;
+
+    const { data: keys } = await supabase
+      .from('api_keys')
+      .select('*')
+      .eq('user_id', user.id);
+
+    return {
+      id: profile.id,
+      name: profile.name,
+      email: profile.email,
+      company: profile.company,
+      location: profile.location,
+      phone: profile.phone,
+      role: profile.role,
+      apiKeys: (keys || []).map((k: DbApiKey) => ({
+        key: k.key,
+        status: k.status,
+        requestedAt: k.created_at
+      })),
+      createdAt: profile.created_at
+    };
+  },
+
+  requestApiKey: async (userId: string) => {
+    const newKey = 'fg_' + crypto.randomUUID().replace(/-/g, '').slice(0, 24);
+    
+    const { error } = await supabase.from('api_keys').insert({
+      user_id: userId,
+      key: newKey,
+      status: 'pending'
+    });
+
+    if (error) throw new Error(error.message);
+  },
+
+  getAllUsers: async (): Promise<User[]> => {
+    const { data: profiles } = await supabase.from('profiles').select('*');
+    if (!profiles) return [];
+
+    const usersWithKeys: User[] = [];
+    
+    for (const profile of profiles) {
+      const { data: keys } = await supabase
+        .from('api_keys')
+        .select('*')
+        .eq('user_id', profile.id);
+
+      usersWithKeys.push({
+        id: profile.id,
+        name: profile.name,
+        email: profile.email,
+        company: profile.company,
+        location: profile.location,
+        phone: profile.phone,
+        role: profile.role,
+        apiKeys: (keys || []).map((k: DbApiKey) => ({
+          key: k.key,
+          status: k.status,
+          requestedAt: k.created_at
+        })),
+        createdAt: profile.created_at
+      });
+    }
+
+    return usersWithKeys;
+  },
+
+  updateApiKeyStatus: async (userId: string, key: string, status: 'active' | 'revoked') => {
+    const { error } = await supabase
+      .from('api_keys')
+      .update({ status })
+      .eq('user_id', userId)
+      .eq('key', key);
+
+    if (error) throw new Error(error.message);
+  }
+};
+
+// ============= LOCALSTORAGE FALLBACK SERVICE =============
+const localAuthService = {
+  register: (data: Omit<User, 'id' | 'role' | 'apiKeys' | 'createdAt'>): User => {
+    initLocalStorage();
     const users = JSON.parse(localStorage.getItem(STORAGE_KEY_USERS) || '[]');
     
     if (users.find((u: User) => u.email === data.email)) {
@@ -62,31 +238,26 @@ export const authService = {
     return newUser;
   },
 
-  // Login
-  login: (email: string) => {
-    initStorage();
+  login: (email: string): User => {
+    initLocalStorage();
     const users = JSON.parse(localStorage.getItem(STORAGE_KEY_USERS) || '[]');
     const user = users.find((u: User) => u.email === email);
     
-    // Simulating password check (in real app, user would have password)
     if (!user) throw new Error('User not found. Please register.');
     
     localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(user));
     return user;
   },
 
-  // Logout
   logout: () => {
     localStorage.removeItem(STORAGE_KEY_SESSION);
   },
 
-  // Get Current User
   getCurrentUser: (): User | null => {
     const session = localStorage.getItem(STORAGE_KEY_SESSION);
     return session ? JSON.parse(session) : null;
   },
 
-  // Request API Key
   requestApiKey: (userId: string) => {
     const users = JSON.parse(localStorage.getItem(STORAGE_KEY_USERS) || '[]');
     const userIndex = users.findIndex((u: User) => u.id === userId);
@@ -95,27 +266,24 @@ export const authService = {
 
     const newKey: ApiKey = {
       key: 'fg_' + Math.random().toString(36).substr(2, 18),
-      status: 'pending', // Pending admin approval
+      status: 'pending',
       requestedAt: new Date().toISOString()
     };
 
     users[userIndex].apiKeys.push(newKey);
     localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
     
-    // Update session if it's the current user
-    const session = authService.getCurrentUser();
+    const session = localAuthService.getCurrentUser();
     if (session && session.id === userId) {
       session.apiKeys.push(newKey);
       localStorage.setItem(STORAGE_KEY_SESSION, JSON.stringify(session));
     }
   },
 
-  // ADMIN: Get All Users
   getAllUsers: (): User[] => {
     return JSON.parse(localStorage.getItem(STORAGE_KEY_USERS) || '[]');
   },
 
-  // ADMIN: Approve/Reject Key
   updateApiKeyStatus: (userId: string, key: string, status: 'active' | 'revoked') => {
     const users = JSON.parse(localStorage.getItem(STORAGE_KEY_USERS) || '[]');
     const userIndex = users.findIndex((u: User) => u.id === userId);
@@ -126,6 +294,69 @@ export const authService = {
     if (keyIndex !== -1) {
       users[userIndex].apiKeys[keyIndex].status = status;
       localStorage.setItem(STORAGE_KEY_USERS, JSON.stringify(users));
+    }
+  }
+};
+
+// ============= UNIFIED AUTH SERVICE (Auto-switches based on config) =============
+export const authService = {
+  isSupabaseMode: isSupabaseConfigured(),
+  
+  register: async (data: { name: string; email: string; password?: string; company: string; location: string; phone: string }): Promise<User> => {
+    if (isSupabaseConfigured()) {
+      return supabaseAuthService.register({ ...data, password: data.password || 'temp123456' });
+    }
+    return localAuthService.register(data);
+  },
+
+  login: async (email: string, password?: string): Promise<User> => {
+    if (isSupabaseConfigured()) {
+      return supabaseAuthService.login(email, password || '');
+    }
+    return localAuthService.login(email);
+  },
+
+  logout: async () => {
+    if (isSupabaseConfigured()) {
+      await supabaseAuthService.logout();
+    } else {
+      localAuthService.logout();
+    }
+  },
+
+  getCurrentUser: (): User | null => {
+    // For sync calls, use localStorage cached version
+    // Components should use async version when possible
+    return localAuthService.getCurrentUser();
+  },
+
+  getCurrentUserAsync: async (): Promise<User | null> => {
+    if (isSupabaseConfigured()) {
+      return supabaseAuthService.getCurrentUser();
+    }
+    return localAuthService.getCurrentUser();
+  },
+
+  requestApiKey: async (userId: string) => {
+    if (isSupabaseConfigured()) {
+      await supabaseAuthService.requestApiKey(userId);
+    } else {
+      localAuthService.requestApiKey(userId);
+    }
+  },
+
+  getAllUsers: async (): Promise<User[]> => {
+    if (isSupabaseConfigured()) {
+      return supabaseAuthService.getAllUsers();
+    }
+    return localAuthService.getAllUsers();
+  },
+
+  updateApiKeyStatus: async (userId: string, key: string, status: 'active' | 'revoked') => {
+    if (isSupabaseConfigured()) {
+      await supabaseAuthService.updateApiKeyStatus(userId, key, status);
+    } else {
+      localAuthService.updateApiKeyStatus(userId, key, status);
     }
   }
 };

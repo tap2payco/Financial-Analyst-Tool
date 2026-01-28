@@ -1,0 +1,34 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model Profile {
+  id        String   @id @db.Uuid
+  name      String
+  email     String   @unique
+  company   String?
+  phone     String?
+  location  String?
+  role      String   @default("developer")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  apiKeys   ApiKey[]
+
+  @@map("profiles")
+}
+
+model ApiKey {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  key       String   @unique
+  status    String   @default("pending")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  user      Profile  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("api_keys")
+}

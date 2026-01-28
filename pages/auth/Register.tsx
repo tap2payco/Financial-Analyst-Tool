@@ -6,21 +6,29 @@ const Register: React.FC = () => {
     const [formData, setFormData] = useState({
         name: '',
         email: '',
+        password: '',
         company: '',
         location: '',
         phone: ''
     });
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
+        setError('');
+        
         try {
-            authService.register(formData);
+            await authService.register(formData);
             // Auto login after register
-            const user = authService.login(formData.email);
+            const user = await authService.login(formData.email, formData.password);
+            localStorage.setItem('finance_guru_session', JSON.stringify(user));
             window.location.href = '/developer';
         } catch (err: any) {
             setError(err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -64,6 +72,18 @@ const Register: React.FC = () => {
                             </div>
 
                             <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Password</label>
+                                <input 
+                                    type="password"
+                                    required={authService.isSupabaseMode}
+                                    minLength={authService.isSupabaseMode ? 6 : 0}
+                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
+                                    placeholder={authService.isSupabaseMode ? "Min 6 characters" : "Optional in demo"}
+                                    onChange={e => setFormData({...formData, password: e.target.value})}
+                                />
+                            </div>
+
+                            <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Phone Number</label>
                                 <input 
                                     type="tel" required
@@ -73,7 +93,7 @@ const Register: React.FC = () => {
                                 />
                             </div>
 
-                            <div className="col-span-1 md:col-span-2">
+                            <div>
                                 <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Company Name</label>
                                 <input 
                                     type="text" required
@@ -94,8 +114,12 @@ const Register: React.FC = () => {
                             </div>
 
                             <div className="col-span-1 md:col-span-2 mt-4">
-                                <button type="submit" className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg hover:shadow-xl hover:shadow-purple-500/40 transition-all transform hover:-translate-y-0.5">
-                                    Create Account
+                                <button 
+                                    type="submit" 
+                                    disabled={loading}
+                                    className="w-full py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 text-white font-bold text-lg hover:shadow-xl hover:shadow-purple-500/40 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    {loading ? 'Creating Account...' : 'Create Account'}
                                 </button>
                                 <p className="text-center text-sm text-slate-500 mt-4">
                                     Already have an account? <a href="/login" className="text-purple-600 font-semibold hover:underline">Sign In</a>
@@ -110,3 +134,4 @@ const Register: React.FC = () => {
 };
 
 export default Register;
+

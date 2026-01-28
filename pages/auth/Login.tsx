@@ -4,12 +4,20 @@ import { authService } from '../../services/authService';
 
 const Login: React.FC = () => {
     const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
     const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
-    const handleLogin = (e: React.FormEvent) => {
+    const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
+        setLoading(true);
+        setError('');
+        
         try {
-            const user = authService.login(email);
+            const user = await authService.login(email, password);
+            // Store session locally for sync access
+            localStorage.setItem('finance_guru_session', JSON.stringify(user));
+            
             if (user.role === 'admin') {
                 window.location.href = '/admin';
             } else {
@@ -17,6 +25,8 @@ const Login: React.FC = () => {
             }
         } catch (err: any) {
             setError(err.message);
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -51,8 +61,26 @@ const Login: React.FC = () => {
                                 />
                             </div>
 
-                            <button type="submit" className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold hover:shadow-lg hover:shadow-indigo-500/40 transition-all transform hover:-translate-y-0.5">
-                                Sign In
+                            <div>
+                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Password</label>
+                                <input 
+                                    type="password" 
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
+                                    className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
+                                    placeholder={authService.isSupabaseMode ? "Enter your password" : "Not required (demo mode)"}
+                                />
+                                {!authService.isSupabaseMode && (
+                                    <p className="text-xs text-slate-400 mt-1">Demo mode: Password not required</p>
+                                )}
+                            </div>
+
+                            <button 
+                                type="submit" 
+                                disabled={loading}
+                                className="w-full py-3.5 rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 text-white font-bold hover:shadow-lg hover:shadow-indigo-500/40 transition-all transform hover:-translate-y-0.5 disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                {loading ? 'Signing in...' : 'Sign In'}
                             </button>
 
                             <p className="text-center text-sm text-slate-500">
@@ -62,7 +90,9 @@ const Login: React.FC = () => {
                         
                         <div className="mt-8 pt-6 border-t border-slate-100 dark:border-slate-700 text-center">
                             <p className="text-xs text-slate-400">
-                                Demo Hint: Use <strong>admin@financeguru.com</strong> for Admin
+                                {authService.isSupabaseMode 
+                                    ? "Connected to Supabase" 
+                                    : "Demo Mode: Use admin@financeguru.com for Admin"}
                             </p>
                         </div>
                     </div>
@@ -73,3 +103,4 @@ const Login: React.FC = () => {
 };
 
 export default Login;
+
