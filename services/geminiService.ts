@@ -134,12 +134,27 @@ const responseSchema = {
     required: ['reportText']
 };
 
+import { rateLimitService } from './rateLimitService';
+import { authService } from './authService';
+
 export async function generateFinancialReport(fileContent: string): Promise<{ reportText: string; chartData?: any }> {
+  // RATE LIMIT CHECK
+  // In a real app, use the actual user ID or API key. 
+  // For this client-side demo, we use a simple identifier or the user's ID if logged in.
+  const user = await authService.getCurrentUserAsync();
+  const identifier = user ? user.id : 'anonymous_user';
+  
+  const { success } = await rateLimitService.checkRateLimit(identifier);
+  
+  if (!success) {
+      return { reportText: "⚠️ Rate limit exceeded. You are making too many requests. Please wait 10 seconds before trying again." };
+  }
+
   try {
     const fullPrompt = `${userInstructionTemplate}\n\n${fileContent}`;
 
     const response = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
+        model: 'gemini-1.5-flash',
         contents: fullPrompt,
         config: {
             systemInstruction: systemInstruction,
