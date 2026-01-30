@@ -45,5 +45,6 @@ export interface ApiKey {
 
 // Helper to check if Supabase is configured
 export const isSupabaseConfigured = (): boolean => {
+  if (getEnvVar('VITE_USE_MOCK_AUTH') === 'true') return false;
   return Boolean(supabaseUrl && supabaseAnonKey);
 };

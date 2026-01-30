@@ -50,8 +50,9 @@ const Login: React.FC = () => {
 
                         <form onSubmit={handleLogin} className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
+                                <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
                                 <input 
+                                    id="email"
                                     type="email" 
                                     required
                                     value={email}
@@ -62,8 +63,9 @@ const Login: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Password</label>
+                                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Password</label>
                                 <input 
+                                    id="password"
                                     type="password" 
                                     value={password}
                                     onChange={(e) => setPassword(e.target.value)}

@@ -52,8 +52,9 @@ const Register: React.FC = () => {
 
                         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div className="col-span-1 md:col-span-2">
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
+                                <label htmlFor="name" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Full Name</label>
                                 <input 
+                                    id="name"
                                     type="text" required
                                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
                                     placeholder="John Doe"
@@ -62,8 +63,9 @@ const Register: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
+                                <label htmlFor="email" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Email Address</label>
                                 <input 
+                                    id="email"
                                     type="email" required
                                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
                                     placeholder="name@company.com"
@@ -72,8 +74,9 @@ const Register: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Password</label>
+                                <label htmlFor="password" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Password</label>
                                 <input 
+                                    id="password"
                                     type="password"
                                     required={authService.isSupabaseMode}
                                     minLength={authService.isSupabaseMode ? 6 : 0}
@@ -84,8 +87,9 @@ const Register: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Phone Number</label>
+                                <label htmlFor="phone" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Phone Number</label>
                                 <input 
+                                    id="phone"
                                     type="tel" required
                                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
                                     placeholder="+1 (555) 000-0000"
@@ -94,8 +98,9 @@ const Register: React.FC = () => {
                             </div>
 
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Company Name</label>
+                                <label htmlFor="company" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Company Name</label>
                                 <input 
+                                    id="company"
                                     type="text" required
                                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
                                     placeholder="Acme Financial Corp"
@@ -104,8 +109,9 @@ const Register: React.FC = () => {
                             </div>
 
                             <div className="col-span-1 md:col-span-2">
-                                <label className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Location/Address</label>
+                                <label htmlFor="location" className="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2">Location/Address</label>
                                 <input 
+                                    id="location"
                                     type="text" required
                                     className="w-full px-4 py-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 outline-none transition-all"
                                     placeholder="123 Wall St, New York, NY"
